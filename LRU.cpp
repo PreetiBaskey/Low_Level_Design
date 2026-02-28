@@ -1,3 +1,18 @@
+/*
+    LRU Cache - Design and implement an in-memory cache that stores
+    key-value pairs and supports Least Recently Used (LRU) eviction
+    when the cache reaches its maximum capacity.
+
+    Requirements :
+    1. get(key)
+    2. put(key, value)
+    3. Should be in-memory
+    4. Have a fixed capacity
+    5. Use LRU Strategy for eviction
+    6. Generic key and value [optional]
+    7. Thread safe [optional]
+*/
+
 #include<iostream>
 #include<unordered_map>
 #include<unordered_set>
@@ -119,3 +134,30 @@ int main() {
     
     return 0;
 }
+
+
+/*
+    Patterns used :
+    1. Strategy Pattern (Primary Pattern used)
+       class CacheEvictionStrategy {
+            virtual string evictKey() = 0;
+            virtual void keyAccessed(const string &key) = 0;
+        };
+
+    2. Dependency Injection
+       Cache(unique_ptr<CacheStorage> s, unique_ptr<CacheEvictionStrategy> e)
+*/
+
+
+/*
+    Follow-up questions :
+    LEVEL I - Core LRU Improvements
+            1. Is your LRU truly O(1)
+            2. Why are you calling get() twice in put()?
+            3. What happens if someone stores empty string?
+
+    LEVLE II - Design Deepening
+            1. Make it Thread-Safe
+            2. Add TTL (Time to Live)
+            3. Make it Production Scale
+*/
