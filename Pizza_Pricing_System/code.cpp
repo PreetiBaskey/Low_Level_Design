@@ -16,7 +16,204 @@
   4. Decorators for Toppings
 */
 
-int main() {
+#include<iostream>
+#include<unordered_set>
+#include<vector>
+#include<string>
+#include<stdexcept>
+#include<memory>
 
-  return 0;
+using namespace std;
+
+//pizza base
+class Pizza {
+    public:
+        virtual string getDescription() = 0;
+        virtual double getPrice() = 0;
+        virtual unordered_set<string> getToppings() = 0;
+        virtual ~Pizza() = default;
+};
+
+//base pizzas
+class Margherita: public Pizza {
+    public:
+        string getDescription() {
+            return "Margherita";
+        }
+        
+        double getPrice() {
+            return 200.0;
+        }
+        
+        unordered_set<string> getToppings() {
+            return {};
+        }
+};
+
+class FarmHouse : public Pizza {
+    public:
+        string getDescription() {
+            return "Farmhouse";
+        }
+        
+        double getPrice() {
+            return 300.0;
+        }
+        
+        unordered_set<string> getToppings() {
+            return {};
+        }
+};
+
+//topping decorator
+class ToppingDecorator : public Pizza {
+    protected:
+        shared_ptr<Pizza> pizza;
+    public:
+        ToppingDecorator(shared_ptr<Pizza> p) : pizza(p) {}
+};
+
+//toppings
+class ExtraCheese : public ToppingDecorator {
+    public:
+        ExtraCheese(shared_ptr<Pizza> p) : ToppingDecorator(p) {}
+        
+        string getDescription() {
+            return pizza->getDescription() + ", Extra Cheese";
+        }
+        
+        double getPrice() {
+            return pizza->getPrice() + 40.0;
+        }
+        
+        unordered_set<string> getToppings() {
+            auto toppings = pizza->getToppings();
+            toppings.insert("ExtraCheese");
+            return toppings;
+        }
+};
+
+class Mushroom : public ToppingDecorator {
+    public:
+        Mushroom(shared_ptr<Pizza> p) : ToppingDecorator(p) {}
+        
+        string getDescription() {
+            return pizza->getDescription() + ", Mushroom";
+        }
+        
+        double getPrice() {
+            return pizza->getPrice() + 30.0;
+        }
+        
+        unordered_set<string> getToppings() {
+            auto toppings = pizza->getToppings();
+            toppings.insert("Mushroom");
+            return toppings;
+        }
+};
+
+class Chicken : public ToppingDecorator {
+    public:
+        Chicken(shared_ptr<Pizza> p) : ToppingDecorator(p) {}
+        
+        string getDescription() {
+            return pizza->getDescription() + ", Chicken";
+        }
+        
+        double getPrice() {
+            return pizza->getPrice() + 60.0;
+        }    
+        
+        unordered_set<string> getToppings() {
+            auto toppings = pizza->getToppings();
+            toppings.insert("Chicken");
+            return toppings;
+        }
+};
+
+//pricing rules
+class PricingRule {
+    public:
+        virtual double apply(shared_ptr<Pizza> pizza, double currentPrice) = 0;
+        virtual ~PricingRule() = default;
+};
+
+//discount rule
+class PercentageDiscountRule : public PricingRule {
+    private:
+        double percentage; // e.g. 10 for 10%
+    public:
+        PercentageDiscountRule(double percent) : percentage(percent) {}
+        
+        double apply(shared_ptr<Pizza> pizza, double currentPrice) {
+            return currentPrice * (1 - percentage / 100.0);
+        }
+};
+
+//mutual exclusion rule
+class MutualExclusionRule : public PricingRule {
+    private:
+        string topping1;
+        string topping2;
+    public:
+        MutualExclusionRule(string t1, string t2) : topping1(t1), topping2(t2) {}
+        
+        double apply(shared_ptr<Pizza> pizza, double currentPrice) {
+            auto toppings = pizza->getToppings();
+            
+            if(toppings.count(topping1) && toppings.count(topping2)) {
+                throw runtime_error("Mutually exclusive toppings selected!");
+            }
+            
+            return currentPrice;
+        }
+};
+
+//pricing engine
+class PricingEngine {
+    private:
+        vector<shared_ptr<PricingRule>> rules;
+    public:
+        void addRule(shared_ptr<PricingRule> rule) {
+            rules.push_back(rule);
+        }
+        
+        double calculate(shared_ptr<Pizza> pizza) {
+            double price = pizza->getPrice();
+            
+            for(auto &rule: rules) {
+                price = rule->apply(pizza, price);
+            }
+            
+            return price;
+        }
+};
+
+//main
+int main() {
+    
+    shared_ptr<Pizza> pizza = make_shared<Margherita>();
+    
+    pizza = make_shared<ExtraCheese>(pizza);
+    pizza = make_shared<Mushroom>(pizza);
+    pizza = make_shared<Chicken>(pizza);
+    
+    cout<<"Order : "<<pizza->getDescription()<<endl;
+    cout<<"Base Price : "<<pizza->getPrice()<<endl;
+    
+    PricingEngine engine;
+    
+    engine.addRule(make_shared<PercentageDiscountRule>(10));
+    
+    engine.addRule(make_shared<MutualExclusionRul e>("Mushroom", "Chicken"));
+    
+    try {
+        double finalPrice = engine.calculate(pizza);
+        cout<<"Final Price : "<<finalPrice<<endl;
+    }
+    catch(exception &e) {
+        cout<<"Error : "<<e.what()<<endl;
+    }
+    
+    return 0;
 }
