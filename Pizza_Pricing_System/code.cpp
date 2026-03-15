@@ -15,7 +15,6 @@
   3. Rules Engine
   4. Decorators for Toppings
 */
-
 #include<iostream>
 #include<unordered_set>
 #include<vector>
@@ -25,17 +24,15 @@
 
 using namespace std;
 
-//pizza base
 class Pizza {
     public:
+        virtual ~Pizza() = default;
         virtual string getDescription() = 0;
         virtual double getPrice() = 0;
         virtual unordered_set<string> getToppings() = 0;
-        virtual ~Pizza() = default;
 };
 
-//base pizzas
-class Margherita: public Pizza {
+class Margherita : public Pizza {
     public:
         string getDescription() {
             return "Margherita";
@@ -50,7 +47,7 @@ class Margherita: public Pizza {
         }
 };
 
-class FarmHouse : public Pizza {
+class Farmhouse : public Pizza {
     public:
         string getDescription() {
             return "Farmhouse";
@@ -65,7 +62,6 @@ class FarmHouse : public Pizza {
         }
 };
 
-//topping decorator
 class ToppingDecorator : public Pizza {
     protected:
         shared_ptr<Pizza> pizza;
@@ -73,13 +69,12 @@ class ToppingDecorator : public Pizza {
         ToppingDecorator(shared_ptr<Pizza> p) : pizza(p) {}
 };
 
-//toppings
 class ExtraCheese : public ToppingDecorator {
     public:
         ExtraCheese(shared_ptr<Pizza> p) : ToppingDecorator(p) {}
         
         string getDescription() {
-            return pizza->getDescription() + ", Extra Cheese";
+            return pizza->getDescription() + " , Extra Cheese";
         }
         
         double getPrice() {
@@ -89,6 +84,7 @@ class ExtraCheese : public ToppingDecorator {
         unordered_set<string> getToppings() {
             auto toppings = pizza->getToppings();
             toppings.insert("ExtraCheese");
+            
             return toppings;
         }
 };
@@ -122,35 +118,33 @@ class Chicken : public ToppingDecorator {
         
         double getPrice() {
             return pizza->getPrice() + 60.0;
-        }    
+        }
         
         unordered_set<string> getToppings() {
             auto toppings = pizza->getToppings();
             toppings.insert("Chicken");
+            
             return toppings;
         }
 };
 
-//pricing rules
 class PricingRule {
     public:
-        virtual double apply(shared_ptr<Pizza> pizza, double currentPrice) = 0;
         virtual ~PricingRule() = default;
+        virtual double apply(shared_ptr<Pizza> pizza, double currentPrice) = 0;
 };
 
-//discount rule
 class PercentageDiscountRule : public PricingRule {
     private:
-        double percentage; // e.g. 10 for 10%
+        double percentage;
     public:
         PercentageDiscountRule(double percent) : percentage(percent) {}
         
         double apply(shared_ptr<Pizza> pizza, double currentPrice) {
-            return currentPrice * (1 - percentage / 100.0);
+            return currentPrice * (1 - percentage/100.0);
         }
 };
 
-//mutual exclusion rule
 class MutualExclusionRule : public PricingRule {
     private:
         string topping1;
@@ -162,14 +156,13 @@ class MutualExclusionRule : public PricingRule {
             auto toppings = pizza->getToppings();
             
             if(toppings.count(topping1) && toppings.count(topping2)) {
-                throw runtime_error("Mutually exclusive toppings selected!");
+            throw runtime_error("mutually exclusive toppings selected !!");
             }
             
             return currentPrice;
         }
 };
 
-//pricing engine
 class PricingEngine {
     private:
         vector<shared_ptr<PricingRule>> rules;
@@ -189,7 +182,6 @@ class PricingEngine {
         }
 };
 
-//main
 int main() {
     
     shared_ptr<Pizza> pizza = make_shared<Margherita>();
@@ -198,18 +190,17 @@ int main() {
     pizza = make_shared<Mushroom>(pizza);
     pizza = make_shared<Chicken>(pizza);
     
-    cout<<"Order : "<<pizza->getDescription()<<endl;
-    cout<<"Base Price : "<<pizza->getPrice()<<endl;
+    cout<<"Order :- "<<pizza->getDescription()<<endl;
+    cout<<"Base price :- "<<pizza->getPrice()<<endl;
     
     PricingEngine engine;
     
     engine.addRule(make_shared<PercentageDiscountRule>(10));
-    
-    engine.addRule(make_shared<MutualExclusionRul e>("Mushroom", "Chicken"));
+    engine.addRule(make_shared<MutualExclusionRule>("Mushroom", "Chicken"));
     
     try {
         double finalPrice = engine.calculate(pizza);
-        cout<<"Final Price : "<<finalPrice<<endl;
+        cout<<"Final Price :- "<<finalPrice<<endl;
     }
     catch(exception &e) {
         cout<<"Error : "<<e.what()<<endl;
