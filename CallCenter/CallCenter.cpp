@@ -124,6 +124,8 @@ public:
     }
 
     // Get first available employee
+    //👉 This function answers ONE question:
+    //❓ “Who should handle this call?”
     Employee* getHandlerForCall(Call* call) {
         for (int level = call->getRank(); level < LEVELS; level++) {
             for (Employee* emp : employees[level]) {
