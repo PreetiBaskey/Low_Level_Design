@@ -46,6 +46,14 @@ public:
     void addChild(string name, Node* node) {
         children[name] = node;
     }
+
+    // ✅ NEW FUNCTION
+    void removeChild(string name) {
+        if(children.find(name) != children.end()) {
+            delete children[name];       // free memory
+            children.erase(name);        // remove from map
+        }
+    }
 };
 
 class FileSystem {
@@ -63,7 +71,22 @@ private:
         return tokens;
     }
 
+    // Helper to get parent directory and last node name
+    pair<Directory*, string> getParent(string path) {
+        vector<string> parts = split(path);
+        Directory* curr = root;
+
+        for(int i = 0; i < parts.size() - 1; i++) {
+            if(!curr->hasChild(parts[i])) return {nullptr, ""};
+            curr = dynamic_cast<Directory*>(curr->getChild(parts[i]));
+        }
+
+        return {curr, parts.back()};
+    }
+
     Node* traverse(string path) {
+        if(path == "/") return root;
+
         Directory* curr = root;
         vector<string> parts = split(path);
 
@@ -126,7 +149,6 @@ public:
             string part = parts[i];
 
             if(i == parts.size() - 1) {
-                // file
                 if(!curr->hasChild(part)) {
                     curr->addChild(part, new File(part));
                 }
@@ -150,17 +172,39 @@ public:
         }
         return "";
     }
+
+    // ✅ NEW DELETE API
+    void rm(string path) {
+        auto [parent, name] = getParent(path);
+
+        if(parent == nullptr) {
+            cout << "Invalid path\n";
+            return;
+        }
+
+        if(!parent->hasChild(name)) {
+            cout << "File/Directory not found\n";
+            return;
+        }
+
+        parent->removeChild(name);
+    }
 };
+
+
 
 
 int main() {
     FileSystem fs;
 
     fs.mkdir("/a/b/c");
-    fs.addContentToFile("/a/b/c/file.txt", "Hello ");
-    fs.addContentToFile("/a/b/c/file.txt", "World");
+    fs.addContentToFile("/a/b/c/file.txt", "Hello World");
+    
+    fs.addContentToFile("/a/b/c/file1.txt", ", How are doing World");
 
     cout << fs.readContentFromFile("/a/b/c/file.txt") << endl;
+
+    fs.rm("/a/b/c/file.txt");   // ✅ delete file
 
     vector<string> files = fs.ls("/a/b/c");
     for(auto &f : files) cout << f << " ";
